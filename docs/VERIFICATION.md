@@ -6,7 +6,7 @@ This is a development preview, not a complete commercial launch.
 
 Before the build environment became unavailable on 2026-09-14, the local Spring Boot test command completed successfully: **6 tests, 0 failures, 0 errors**. Tests covered concurrent reservations, authoritative prices, idempotency, guest/owner isolation, cancellation slot release, holidays/blocks, and premature review/completion rejection.
 
-The source was recovered from the session into GitHub after the environment interruption. Repository CI must validate the recovered snapshot independently. H2 MySQL mode does not substitute for real MySQL validation.
+The source was recovered from the session into GitHub after the environment interruption. GitHub Actions independently validated recovered commit 15fb7150414b6bf66b863aac3aa63bcfc84fae2b: backend BUILD SUCCESS with 6 tests, 0 failures and 0 errors. H2 MySQL mode does not substitute for real MySQL validation.
 
 The web admin JavaScript syntax check passed locally. Browser interaction tests were not completed. The local Android build was interrupted before its final result could be read. No APK or lint success is claimed from that local attempt.
 

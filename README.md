@@ -26,7 +26,7 @@ mvn -f backend/pom.xml spring-boot:run
 1. Open the **android/** directory as the project.
 2. Use Gradle JDK 17. Install Android SDK Platform 35 and Build Tools 34.0.0 in SDK Manager.
 3. Copy **android/app/google-services.example.json** to **android/app/google-services.json**. The example contains the Android client configuration you supplied, for package `com.parlour.management`. Client configuration is included for reproducible builds; it does not grant server or console access. Private server credentials are never included.
-4. This recovered snapshot does not include a verified Gradle wrapper. Install Gradle 8.9 and run `gradle wrapper --gradle-version 8.9` in `android/`, then sync the project in Android Studio.
+4. The Gradle 8.9 wrapper is included from Gradle's official v8.9.0 source. Sync the project in Android Studio.
 5. Run the `app` configuration on an Android 8.0+ device or emulator with Google Play services.
 6. On the Connection screen enter your API address. The emulator uses `http://10.0.2.2:8080` for a local backend. A physical phone needs a reachable server address, or your computer's LAN IP while both devices are on the same network for debug testing.
 7. Release builds allow HTTPS only. Production requires an HTTPS reverse proxy or managed host. The client never connects directly to MySQL.
@@ -51,3 +51,5 @@ Guest access is an automatically issued bearer session, not a customer sign-up f
 See [integration setup](docs/INTEGRATIONS.md), [database design](docs/SCHEMA.md), and [verification](docs/VERIFICATION.md).
 
 GitHub Actions runs backend tests and builds Android. A repository secret named `GOOGLE_SERVICES_JSON` can override the supplied client configuration. Build artifacts are available on successful workflow runs. Never put service-account private keys, merchant passwords, JWT secrets, release keystores or production database passwords into git. Supply those through the hosting environment.
+
+Successful main-branch CI runs publish a prerelease APK under the repository's Releases page after backend, MySQL and Android checks pass. Those checks do not replace live integration and device testing.
