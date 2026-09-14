@@ -1,0 +1,11 @@
+.env
+*.jks
+*.keystore
+*service-account*.json
+google-services.json
+local.properties
+.gradle/
+build/
+target/
+.idea/
+*.iml

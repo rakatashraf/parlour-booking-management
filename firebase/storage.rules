@@ -1,0 +1,9 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      // Uploads go through owner-authorized Spring Boot endpoints using Admin SDK.
+      allow read, write: if false;
+    }
+  }
+}
