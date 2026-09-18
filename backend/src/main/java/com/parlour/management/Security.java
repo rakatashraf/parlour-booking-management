@@ -1,4 +1,4 @@
-package com.parlour.api;
+package com.parlour.management;
 import java.time.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;

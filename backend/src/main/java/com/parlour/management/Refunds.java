@@ -1,5 +1,5 @@
-package com.parlour.api;
-import static com.parlour.api.Db.*;
+package com.parlour.management;
+import static com.parlour.management.Db.*;
 import java.util.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.transaction.PlatformTransactionManager;
