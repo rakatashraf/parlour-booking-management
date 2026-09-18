@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "616682569785",
+    "project_id": "parlour-booking-management",
+    "storage_bucket": "parlour-booking-management.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:616682569785:android:0b51693b03f9a16af24de8",
+        "android_client_info": {
+          "package_name": "com.parlour.management"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAxFidsTtOZd-hmesiVITJ93uZID3eFmYc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
