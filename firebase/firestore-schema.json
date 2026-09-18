@@ -2,7 +2,7 @@
   "version": 1,
   "project": "parlour-booking-management",
   "package": "com.parlour.management",
-  "strategy": "MySQL remains the transactional source of truth; Firestore is a synchronized authenticated read model. Admin SDK owns writes.",
+  "strategy": "MySQL is the transactional source of truth. Committed customer, owner and admin mutations trigger immediate affected-collection Firestore reconciliation; a periodic full reconciliation is the recovery safety net. Admin SDK owns all Firestore writes.",
   "collections": {
     "users": {
       "id": "user_id",
@@ -117,5 +117,38 @@
     "users.password_hash",
     "bookings.request_hash",
     "bookings.idempotency_key"
-  ]
+  ],
+  "roleDriven": {
+    "customer": [
+      "users",
+      "bookings",
+      "booking_items",
+      "payments",
+      "ratings",
+      "notifications",
+      "complaints"
+    ],
+    "owner": [
+      "parlours",
+      "services",
+      "staff",
+      "staff_services",
+      "staff_schedules",
+      "business_hours",
+      "holidays",
+      "blocked_slots",
+      "cancellation_policies",
+      "parlour_images",
+      "bookings"
+    ],
+    "admin": [
+      "users",
+      "parlours",
+      "categories",
+      "banners",
+      "complaints",
+      "refund_requests",
+      "admin_actions"
+    ]
+  }
 }

@@ -4,12 +4,16 @@ import java.math.BigDecimal;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import com.google.cloud.firestore.*;
 import com.google.firebase.cloud.FirestoreClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.event.TransactionalEventListener;
+import org.springframework.transaction.event.TransactionPhase;
+import jakarta.annotation.PreDestroy;
 
 @RestController
 public class FirestoreSync {
@@ -37,11 +41,20 @@ public class FirestoreSync {
   new Source("banners",List.of("banner_id")),
   new Source("refund_requests",List.of("refund_id"))
  );
+ static final Map<String,Source> SOURCE_BY_NAME=SOURCES.stream().collect(java.util.stream.Collectors.toUnmodifiableMap(Source::collection,s->s));
  final Db db;final Auth auth;final FirebaseServices firebase;final Firestore store;final String project;
+ final Set<String> pending=ConcurrentHashMap.newKeySet();final AtomicBoolean workerQueued=new AtomicBoolean();
+ final ExecutorService worker=Executors.newSingleThreadExecutor(r->{Thread t=new Thread(r,"firestore-sync");t.setDaemon(true);return t;});
  FirestoreSync(Db db,Auth auth,FirebaseServices firebase,@Value("${app.firebase-project}")String project){
   this.db=db;this.auth=auth;this.firebase=firebase;this.project=project;
   this.store=firebase.enabled?FirestoreClient.getFirestore(firebase.app):null;
  }
+ @TransactionalEventListener(phase=TransactionPhase.AFTER_COMMIT,fallbackExecution=true)
+ void changed(Db.Mutation event){queue(event.table());}
+ void queue(String table){if(!firebase.enabled||!SOURCE_BY_NAME.containsKey(table))return;pending.add(table);if(workerQueued.compareAndSet(false,true))worker.execute(this::drain);}
+ void drain(){try{while(true){var names=new LinkedHashSet<String>(pending);pending.removeAll(names);if(names.isEmpty())break;try{syncSelected(names);}catch(Exception e){System.err.println("Firestore event sync failed: "+e.getMessage());}}}finally{workerQueued.set(false);if(!pending.isEmpty())queue(pending.iterator().next());}}
+ synchronized void syncSelected(Set<String> names)throws Exception{long documents=0;for(String name:names){var source=SOURCE_BY_NAME.get(name);if(source!=null)documents+=sync(source);}store.collection("system").document("core").set(map("last_event_sync_at",FieldValue.serverTimestamp(),"last_event_collections",new ArrayList<>(names),"last_event_documents",documents),SetOptions.merge()).get(15,TimeUnit.SECONDS);}
+ @PreDestroy void shutdown(){worker.shutdown();}
  @Scheduled(fixedDelayString="${app.firestore-sync-ms:300000}",initialDelayString="${app.firestore-sync-initial-delay-ms:15000}")
  void scheduled(){if(!firebase.enabled)return;try{syncAll();}catch(Exception e){System.err.println("Firestore projection failed: "+e.getMessage());}}
  @PostMapping("/api/admin/firestore/sync") Map<String,Object> manual(){
@@ -58,10 +71,10 @@ public class FirestoreSync {
   for(var source:SOURCES)documents+=sync(source);
   store.collection("system").document("core").set(map(
    "schema_version",1,"project_id",project,"java_package","com.parlour.management",
-   "source_of_truth","mysql","client_writes",false,
+   "source_of_truth","mysql","client_writes",false,"sync_mode","after_commit_with_periodic_reconciliation",
    "collections",SOURCES.stream().map(Source::collection).toList(),
-   "last_sync_at",FieldValue.serverTimestamp()
-  )).get(15,TimeUnit.SECONDS);
+   "last_full_sync_at",FieldValue.serverTimestamp()
+  ),SetOptions.merge()).get(15,TimeUnit.SECONDS);
   return map("ok",true,"collections",SOURCES.size(),"documents",documents,"project",project);
  }
  long sync(Source source) throws Exception{

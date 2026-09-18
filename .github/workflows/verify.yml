@@ -42,6 +42,25 @@ jobs:
           MYSQL_TEST_USER: parlour_test
           MYSQL_TEST_PASSWORD: disposable-ci-test-password
         run: mvn -B -ntp -f backend/pom.xml -Dtest=MySqlIntegrationTest test
+  firebase-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: firebase/package.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install Firebase rules test dependencies
+        working-directory: firebase
+        run: npm install --no-audit --no-fund
+      - name: Test Firestore security rules
+        working-directory: firebase
+        run: npx --yes firebase-tools@15.30.1 emulators:exec --only firestore --project demo-parlour-booking-management "npm run test:rules"
   android:
     runs-on: ubuntu-latest
     steps:
@@ -84,7 +103,7 @@ jobs:
           retention-days: 30
   release:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-    needs: [backend, mysql, android]
+    needs: [backend, mysql, firebase-rules, android]
     runs-on: ubuntu-latest
     permissions:
       contents: write

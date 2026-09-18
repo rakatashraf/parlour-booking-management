@@ -4,7 +4,7 @@ Development preview for the supplied project proposal: native Android Java/XML w
 
 Both Android and backend Java sources use the unified package namespace `com.parlour.management`.
 
-**Status: development preview, not a launched commercial product.** AI Studio source could not be accessed through the supplied link. The native UI is a functional baseline, not a verified reproduction of that design. Firebase Console and Google sign-in returned gateway errors during development. No live Firebase settings, hosting, merchant credentials or billing were configured. See [verification and gaps](docs/VERIFICATION.md).
+**Status: build-verified development implementation, not yet a launched commercial product.** The native Android UI, Spring Boot backend, MySQL booking engine and Firebase integration are implemented and CI-verified. The Firebase project owner has created the Firestore database; production IAM credentials, rules/index deployment, live FCM/Storage validation, hosting, merchant credentials and release signing still require environment-specific setup. See [verification and gaps](docs/VERIFICATION.md).
 
 ## Run the backend and database
 
@@ -14,7 +14,7 @@ Both Android and backend Java sources use the unified package namespace `com.par
 4. Open `http://localhost:8080/api/public/health` and the administrator panel at `http://localhost:8080/admin/`.
 5. Remove bootstrap credentials from your environment after the first administrator is created.
 
-Flyway creates the schema on first startup. MySQL is internal to the Compose network and persists in `mysql-data`. No sample parlours, services, staff or appointments are seeded. Business records are entered by users. The administrator is created only when explicit bootstrap values are provided.
+Flyway creates the schema on first startup. MySQL is internal to the Compose network and persists in `mysql-data`. When Firebase is enabled on the backend, Firestore is updated from committed customer, owner and administrator activity, with a periodic full reconciliation as a safety net. No sample parlours, services, staff or appointments are seeded. Business records are entered by users. The administrator is created only when explicit bootstrap values are provided.
 
 For a Java-only backend launch, install JDK 17, Maven 3.9+, and MySQL 8.4. Create a database and restricted database user, set `DB_URL`, `DB_USER`, `DB_PASSWORD`, `JWT_SECRET` and any integration environment variables, then run:
 
