@@ -2,21 +2,37 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
-    function userId() { return int(request.auth.uid); }
+    function userId() { return signedIn() ? int(request.auth.uid) : -1; }
     function isAdmin() { return signedIn() && request.auth.token.role == 'ADMIN'; }
     function ownsParlour(pid) {
       return signedIn() &&
         exists(/databases/$(database)/documents/parlours/$(pid)) &&
         get(/databases/$(database)/documents/parlours/$(pid)).data.owner_id == userId();
     }
+    function ownsStaff(sid) {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/staff/$(sid)) &&
+        ownsParlour(string(get(/databases/$(database)/documents/staff/$(sid)).data.parlour_id));
+    }
     function parlourReadable(pid) {
       return exists(/databases/$(database)/documents/parlours/$(pid)) &&
         (get(/databases/$(database)/documents/parlours/$(pid)).data.status == 'VERIFIED' ||
          ownsParlour(pid) || isAdmin());
     }
+    function bookingReadable(bid) {
+      let b = get(/databases/$(database)/documents/bookings/$(bid));
+      return signedIn() && b != null &&
+        (b.data.customer_id == userId() || ownsParlour(string(b.data.parlour_id)) || isAdmin());
+    }
 
-    match /categories/{id} { allow read: if resource.data.status == 'ACTIVE'; allow write: if false; }
-    match /banners/{id} { allow read: if resource.data.status == 'ACTIVE'; allow write: if false; }
+    match /categories/{id} {
+      allow read: if resource.data.status == 'ACTIVE' || isAdmin();
+      allow write: if false;
+    }
+    match /banners/{id} {
+      allow read: if resource.data.status == 'ACTIVE' || isAdmin();
+      allow write: if false;
+    }
     match /parlours/{id} {
       allow read: if resource.data.status == 'VERIFIED' ||
         (signedIn() && resource.data.owner_id == userId()) || isAdmin();
@@ -27,20 +43,51 @@ service cloud.firestore {
     match /business_hours/{id} { allow read: if parlourReadable(string(resource.data.parlour_id)); allow write: if false; }
     match /parlour_images/{id} { allow read: if parlourReadable(string(resource.data.parlour_id)); allow write: if false; }
     match /cancellation_policies/{id} { allow read: if parlourReadable(string(resource.data.parlour_id)); allow write: if false; }
-    match /users/{id} { allow read: if signedIn() && (id == request.auth.uid || isAdmin()); allow write: if false; }
+
+    match /staff_services/{id} {
+      allow read: if isAdmin() || ownsStaff(string(resource.data.staff_id));
+      allow write: if false;
+    }
+    match /staff_schedules/{id} {
+      allow read: if isAdmin() || ownsStaff(string(resource.data.staff_id));
+      allow write: if false;
+    }
+    match /holidays/{id} {
+      allow read: if isAdmin() || ownsParlour(string(resource.data.parlour_id));
+      allow write: if false;
+    }
+    match /blocked_slots/{id} {
+      allow read: if isAdmin() || ownsParlour(string(resource.data.parlour_id));
+      allow write: if false;
+    }
+
+    match /users/{id} {
+      allow read: if signedIn() && (id == request.auth.uid || isAdmin());
+      allow write: if false;
+    }
     match /bookings/{id} {
       allow read: if signedIn() &&
         (resource.data.customer_id == userId() || ownsParlour(string(resource.data.parlour_id)) || isAdmin());
+      allow write: if false;
+    }
+    match /booking_items/{id} { allow read: if bookingReadable(string(resource.data.booking_id)); allow write: if false; }
+    match /payments/{id} { allow read: if bookingReadable(string(resource.data.booking_id)); allow write: if false; }
+    match /ratings/{id} {
+      allow read: if parlourReadable(string(resource.data.parlour_id));
       allow write: if false;
     }
     match /notifications/{id} {
       allow read: if signedIn() && (resource.data.user_id == userId() || isAdmin());
       allow write: if false;
     }
-    match /ratings/{id} {
-      allow read: if resource.data.target_type == 'PARLOUR' && parlourReadable(string(resource.data.parlour_id));
+    match /complaints/{id} {
+      allow read: if signedIn() && (resource.data.user_id == userId() || isAdmin());
       allow write: if false;
     }
+    match /admin_actions/{id} { allow read: if isAdmin(); allow write: if false; }
+    match /refund_requests/{id} { allow read: if isAdmin(); allow write: if false; }
+    match /system/{id} { allow read: if isAdmin(); allow write: if false; }
+
     match /{document=**} { allow read, write: if false; }
   }
 }
