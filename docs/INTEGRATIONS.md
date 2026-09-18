@@ -8,7 +8,7 @@ The supplied Android client JSON identifies the app. It is not a service-account
 
 On the backend host use Application Default Credentials through an appropriately scoped service identity. For local development, an authorized ADC setup can be used. If using service-account JSON, keep it outside the repository and mount it read-only; set GOOGLE_APPLICATION_CREDENTIALS to that path. Do not send private keys in chat or commit them.
 
-Set FIREBASE_ENABLED=true only after credentials, Cloud Messaging permissions, Firestore and Storage access are ready. Compose defaults to false. Create an ignored Compose override for read-only credentials and the enabled setting. The bucket must exist and any billing requirements must already be met.
+Set FIREBASE_ENABLED=true only after credentials, Cloud Messaging permissions, Firestore and Storage access are ready. Docker Compose now forwards the Firebase and Firestore sync environment settings. For a local credential file, keep it outside the repository, set `FIREBASE_CREDENTIALS_FILE` to that file, and start with `docker compose -f compose.yaml -f compose.firebase.example.yaml up --build`; the example override mounts it read-only inside the API container. Compose defaults to false. Create an ignored Compose override for read-only credentials and the enabled setting. The bucket must exist and any billing requirements must already be met.
 
 ### Firestore core data model
 
