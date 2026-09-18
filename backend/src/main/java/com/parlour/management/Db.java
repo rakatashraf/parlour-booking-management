@@ -2,21 +2,27 @@ package com.parlour.management;
 import java.util.*;
 import java.math.BigDecimal;
 import java.sql.*;
+import java.util.regex.*;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.*;
 import org.springframework.stereotype.Repository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
 @Repository
 public class Db {
- final JdbcTemplate jdbc; public Db(JdbcTemplate jdbc){this.jdbc=jdbc;}
+ public record Mutation(String table){}
+ static final Pattern MUTATION_TABLE=Pattern.compile("^\\s*(?:UPDATE\\s+|DELETE\\s+FROM\\s+|INSERT\\s+INTO\\s+)([A-Za-z_][A-Za-z0-9_]*)",Pattern.CASE_INSENSITIVE);
+ final JdbcTemplate jdbc;final ApplicationEventPublisher events;
+ public Db(JdbcTemplate jdbc,ApplicationEventPublisher events){this.jdbc=jdbc;this.events=events;}
  List<Map<String,Object>> list(String sql,Object... args){return jdbc.queryForList(sql,args);}
  Map<String,Object> one(String sql,Object... args){var rows=list(sql,args);if(rows.isEmpty())throw error(404,"Record not found");return rows.get(0);}
  long count(String sql,Object...args){return jdbc.queryForObject(sql,Long.class,args);}
- int update(String sql,Object...args){return jdbc.update(sql,args);}
+ int update(String sql,Object...args){int changed=jdbc.update(sql,args);if(changed>0)emit(sql);return changed;}
+ void emit(String sql){var m=MUTATION_TABLE.matcher(sql);if(m.find())events.publishEvent(new Mutation(m.group(1).toLowerCase(Locale.ROOT)));}
  long insert(String table,Map<String,Object> fields){
   var keys=new ArrayList<>(fields.keySet());String sql="INSERT INTO "+table+" ("+String.join(",",keys)+") VALUES ("+String.join(",",Collections.nCopies(keys.size(),"?"))+")";
-  KeyHolder holder=new GeneratedKeyHolder();jdbc.update(c->{var p=c.prepareStatement(sql,new String[]{primary(table)});for(int i=0;i<keys.size();i++)p.setObject(i+1,fields.get(keys.get(i)));return p;},holder);return holder.getKey().longValue();
+  KeyHolder holder=new GeneratedKeyHolder();jdbc.update(c->{var p=c.prepareStatement(sql,new String[]{primary(table)});for(int i=0;i<keys.size();i++)p.setObject(i+1,fields.get(keys.get(i)));return p;},holder);events.publishEvent(new Mutation(table));return holder.getKey().longValue();
  }
  static String primary(String table){return switch(table){
  case "users"->"user_id";case "parlours"->"parlour_id";case "parlour_images"->"image_id";
