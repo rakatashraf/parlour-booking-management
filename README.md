@@ -27,15 +27,15 @@ mvn -f backend/pom.xml spring-boot:run
 
 1. Open the **android/** directory as the project.
 2. Use Gradle JDK 17. Install Android SDK Platform 35 and Build Tools 34.0.0 in SDK Manager.
-3. Copy **android/app/google-services.example.json** to **android/app/google-services.json**. The example contains the Android client configuration you supplied, for package `com.parlour.management`. Client configuration is included for reproducible builds; it does not grant server or console access. Private server credentials are never included.
+3. The Firebase Android client configuration is already committed at **android/app/google-services.json** for project `parlour-booking-management` and package `com.parlour.management`. This is client configuration, not a server credential; no Firebase service-account private key is stored in Git.
 4. The Gradle 8.9 wrapper is included from Gradle's official v8.9.0 source. Sync the project in Android Studio.
 5. Run the `app` configuration on an Android 8.0+ device or emulator with Google Play services.
-6. On the Connection screen enter your API address. The emulator uses `http://10.0.2.2:8080` for a local backend. A physical phone needs a reachable server address, or your computer's LAN IP while both devices are on the same network for debug testing.
-7. Release builds allow HTTPS only. Production requires an HTTPS reverse proxy or managed host. The client never connects directly to MySQL.
+6. Debug builds default to `http://10.0.2.2:8080`, so an Android emulator connects automatically to a backend running on your computer. On a physical phone, open Account → Connection and enter your computer's LAN address or a reachable HTTPS backend. You can also override the default at build time with `-PAPI_BASE_URL=https://your-api.example.com`.
+7. Release builds accept only HTTPS API URLs. Production requires an HTTPS reverse proxy or managed host. The client never connects directly to MySQL.
 
 To create an installation package, run `gradle assembleDebug` in `android/`, or use `./gradlew assembleDebug` once the wrapper has been generated. On Windows use `gradlew.bat assembleDebug`. The output is **android/app/build/outputs/apk/debug/app-debug.apk**.
 
-A debug APK is signed for testing, not for Play Store release. No production API endpoint is compiled into this preview. Set one inside the app. Online bookings require your backend to be running.
+A debug APK is signed for testing, not for Play Store release. The debug build is ready to run against a local backend on the Android emulator without entering a URL manually. Online bookings and all server-authoritative writes still require the Spring Boot backend to be running.
 
 ## First business setup
 
