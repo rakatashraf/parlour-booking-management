@@ -1,6 +1,6 @@
 # Verification and outstanding work
 
-This is a development preview, not a complete commercial launch.
+The repository is now a buildable end-to-end development implementation. Commercial launch still depends on external production credentials, hosting, release signing, policy review, and live-device validation.
 
 ## Recorded evidence
 
@@ -13,13 +13,12 @@ The web admin JavaScript syntax check passed locally. Browser interaction tests 
 ## Remaining requirements
 
 - Original AI Studio frontend source and visual matching.
-- Firebase Console access and live FCM, Storage, Analytics and Crashlytics validation. No cloud settings have been changed.
+- Live Firebase IAM/service credentials, deployed Firestore/Storage rules, FCM delivery, Analytics and Crashlytics validation on the production Firebase project.
 - Production Spring Boot/MySQL hosting and reachable HTTPS API.
 - SSLCommerz credentials, sandbox lifecycle/refund tests and production enablement.
-- Real MySQL migration/concurrency tests.
 - Device/emulator testing, accessibility review, offline data cache and rotation/process-death recovery.
-- Embedded Maps UI and gallery/photo-upload screen.
-- Owner walk-in UI, automatic slot synchronization and full owner reporting.
+- Embedded Maps UI. Native owner photo picking/upload is implemented; embedded map rendering still requires a Maps SDK/API-key decision.
+- Owner walk-in UI and richer owner reporting. Firestore synchronization after committed app changes is implemented, with periodic reconciliation.
 - Full category/banner editing, pagination, system settings and richer admin analytics.
 - Guest history recovery and owner password recovery.
 - Distributed rate limiting, coordinated outbox claims and measured load performance.

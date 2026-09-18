@@ -20,12 +20,21 @@ Android requests `/api/firebase/custom-token` after its normal Spring Boot login
 
 Sensitive fields `password_hash`, `request_hash`, and `idempotency_key` are deliberately excluded from the Firestore projection. Client writes are denied by Firestore rules.
 
-The scheduled projection defaults to every five minutes. Administrators can force it with `POST /api/admin/firestore/sync` and inspect it with `GET /api/admin/firestore/status`. The projection writes `system/core` with schema and last-sync metadata.
+Application input is persisted through Spring Boot/MySQL first. After a successful transaction commits, the affected SQL tables emit mutation events and the backend immediately reconciles only the matching Firestore collections. The five-minute full projection remains as a recovery/reconciliation safety net. Administrators can force a full projection with `POST /api/admin/firestore/sync` and inspect it with `GET /api/admin/firestore/status`. The projection writes `system/core` with full-sync and event-sync metadata.
 
+### Role-driven data flow
+
+Firestore content is created from real application activity rather than seeded placeholder records:
+
+- **Customer/user input** creates or changes `users`, `bookings`, `booking_items`, `payments`, `ratings`, `complaints`, and `notifications` through validated backend endpoints.
+- **Parlour owner input** creates or changes `parlours`, `services`, `staff`, `staff_services`, `staff_schedules`, `business_hours`, `holidays`, `blocked_slots`, `cancellation_policies`, `parlour_images`, and owner-side booking state.
+- **Administrator input** changes verification/account state and manages `categories`, `banners`, `complaints`, `refund_requests`, and `admin_actions`.
+
+Mobile clients do not write Firestore documents directly. They send business actions to Spring Boot, MySQL commits the authoritative transaction, and the Firestore projection publishes the resulting state. This prevents a modified Android client from bypassing availability, payment, verification, refund, or ownership checks.
 Rules, composite indexes, schema documentation, and the Firebase project alias live in `firebase/`. Deploy with an authenticated Firebase CLI from that directory using `firebase deploy --only firestore,storage --project parlour-booking-management`. The default Firestore database must exist in Native mode before the first sync.
 Device registration uses /api/device-token. FCM delivery retries up to ten attempts. Delivery is at-least-once, with possible duplicates after partial delivery or restart. Run one notification worker until coordinated claims are implemented. In-app history remains available when FCM is disabled.
 
-Owner-authorized image uploads use /api/owner/parlours/{id}/upload with multipart field file. The backend checks type and dimensions, then returns a URL to save in parlour_images. Public bearer download URLs are intended for public business photos only. The Android preview accepts gallery URLs; a native image picker remains pending.
+Owner-authorized image uploads use `/api/owner/parlours/{id}/upload` with multipart field `file`. Android now provides a native image picker for JPEG/PNG files. The backend checks size, type and dimensions, uploads to Firebase Storage, automatically creates the `parlour_images` row, and the after-commit Firestore projection publishes that gallery record. Public bearer download URLs are intended for public business photos only.
 
 firebase/storage.rules denies direct client reads/writes. It has NOT been deployed. Admin SDK access is governed by IAM. Review existing bucket usage before changing project rules.
 
