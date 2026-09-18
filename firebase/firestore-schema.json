@@ -1,0 +1,121 @@
+{
+  "version": 1,
+  "project": "parlour-booking-management",
+  "package": "com.parlour.management",
+  "strategy": "MySQL remains the transactional source of truth; Firestore is a synchronized authenticated read model. Admin SDK owns writes.",
+  "collections": {
+    "users": {
+      "id": "user_id",
+      "private": true
+    },
+    "parlours": {
+      "id": "parlour_id"
+    },
+    "parlour_images": {
+      "id": "image_id",
+      "relation": "parlour_id"
+    },
+    "services": {
+      "id": "service_id",
+      "relation": "parlour_id"
+    },
+    "staff": {
+      "id": "staff_id",
+      "relation": "parlour_id"
+    },
+    "staff_services": {
+      "id": "staff_id_service_id",
+      "relations": [
+        "staff_id",
+        "service_id"
+      ]
+    },
+    "staff_schedules": {
+      "id": "schedule_id",
+      "relation": "staff_id"
+    },
+    "business_hours": {
+      "id": "hours_id",
+      "relation": "parlour_id"
+    },
+    "holidays": {
+      "id": "holiday_id",
+      "relation": "parlour_id"
+    },
+    "blocked_slots": {
+      "id": "block_id",
+      "relations": [
+        "parlour_id",
+        "staff_id"
+      ]
+    },
+    "cancellation_policies": {
+      "id": "policy_id",
+      "relation": "parlour_id"
+    },
+    "bookings": {
+      "id": "booking_id",
+      "relations": [
+        "customer_id",
+        "parlour_id",
+        "staff_id"
+      ]
+    },
+    "booking_items": {
+      "id": "booking_item_id",
+      "relations": [
+        "booking_id",
+        "service_id"
+      ]
+    },
+    "payments": {
+      "id": "payment_id",
+      "relation": "booking_id"
+    },
+    "ratings": {
+      "id": "rating_id",
+      "relations": [
+        "booking_id",
+        "parlour_id",
+        "staff_id"
+      ]
+    },
+    "notifications": {
+      "id": "notification_id",
+      "relations": [
+        "user_id",
+        "booking_id"
+      ]
+    },
+    "complaints": {
+      "id": "complaint_id",
+      "relations": [
+        "user_id",
+        "booking_id"
+      ]
+    },
+    "admin_actions": {
+      "id": "action_id",
+      "relation": "admin_id"
+    },
+    "categories": {
+      "id": "category_id"
+    },
+    "banners": {
+      "id": "banner_id"
+    },
+    "refund_requests": {
+      "id": "refund_id",
+      "relation": "payment_id"
+    },
+    "system": {
+      "id": "core",
+      "purpose": "schema and synchronization metadata"
+    }
+  },
+  "excludedSensitiveFields": [
+    "users.password_hash",
+    "bookings.request_hash",
+    "bookings.idempotency_key"
+  ]
+}

@@ -1,0 +1,7 @@
+services:
+  api:
+    environment:
+      FIREBASE_ENABLED: "true"
+      GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/firebase-service-account.json
+    volumes:
+      - ${FIREBASE_CREDENTIALS_FILE:?Set FIREBASE_CREDENTIALS_FILE to a service-account JSON path}:/run/secrets/firebase-service-account.json:ro

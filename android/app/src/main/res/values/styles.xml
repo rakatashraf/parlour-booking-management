@@ -1,5 +1,5 @@
 <resources>
 <style name="Theme.Parlour" parent="Theme.MaterialComponents.Light.NoActionBar">
-<item name="colorPrimary">#643C57</item><item name="colorPrimaryVariant">#4E2942</item><item name="colorOnPrimary">#FFFFFF</item><item name="colorSecondary">#A17051</item><item name="android:fontFamily">sans</item><item name="android:windowLightStatusBar">true</item><item name="android:statusBarColor">#FBF7F2</item><item name="android:navigationBarColor">#FBF7F2</item><item name="android:windowActionModeOverlay">true</item><item name="android:windowLightNavigationBar">true</item>
+<item name="colorPrimary">#643C57</item><item name="colorPrimaryVariant">#4E2942</item><item name="colorOnPrimary">#FFFFFF</item><item name="colorSecondary">#A17051</item><item name="android:fontFamily">sans</item><item name="android:windowLightStatusBar">true</item><item name="android:statusBarColor">#FBF7F2</item><item name="android:navigationBarColor">#FBF7F2</item><item name="android:windowActionModeOverlay">true</item>
 </style>
 </resources>
