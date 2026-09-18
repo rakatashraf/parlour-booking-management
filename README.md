@@ -4,7 +4,7 @@ Development preview for the supplied project proposal: native Android Java/XML w
 
 Both Android and backend Java sources use the unified package namespace `com.parlour.management`.
 
-**Status: development preview, not a launched commercial product.** AI Studio source could not be accessed through the supplied link. The native UI is a functional baseline, not a verified reproduction of that design. Firebase Console and Google sign-in returned gateway errors during development. No live Firebase settings, hosting, merchant credentials or billing were configured. See [verification and gaps](docs/VERIFICATION.md).
+**Status: build-verified development implementation, not yet a launched commercial product.** The native Android UI, Spring Boot backend, MySQL booking engine and Firebase integration are implemented and CI-verified. The Firebase project owner has created the Firestore database; production IAM credentials, rules/index deployment, live FCM/Storage validation, hosting, merchant credentials and release signing still require environment-specific setup. See [verification and gaps](docs/VERIFICATION.md).
 
 ## Run the backend and database
 

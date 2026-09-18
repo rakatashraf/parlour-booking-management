@@ -1,29 +1,32 @@
 # Verification and outstanding work
 
-The repository is now a buildable end-to-end development implementation. Commercial launch still depends on external production credentials, hosting, release signing, policy review, and live-device validation.
+The repository is a buildable end-to-end development implementation. Commercial launch still depends on external production credentials, hosting, release signing, policy review, and live-device validation.
 
-## Recorded evidence
+## Current automated verification
 
-Before the build environment became unavailable on 2026-09-14, the local Spring Boot test command completed successfully: **6 tests, 0 failures, 0 errors**. Tests covered concurrent reservations, authoritative prices, idempotency, guest/owner isolation, cancellation slot release, holidays/blocks, and premature review/completion rejection.
+- Spring Boot/Maven verification passes on Java 17.
+- Booking invariants pass against a real MySQL 8.4 service in GitHub Actions.
+- Android `assembleDebug` and `lintDebug` pass, and CI produces an installable debug APK artifact.
+- Firestore Security Rules pass emulator tests for public verified parlours, owner access to owned pending resources, customer/owner booking access, admin-only operational data, and denial of direct client writes.
+- Firestore projection is event-driven after committed SQL mutations, with a five-minute full reconciliation fallback.
+- Native owner JPEG/PNG selection and Firebase Storage upload are implemented; uploads automatically create gallery records that propagate to Firestore.
 
-The source was recovered from the session into GitHub after the environment interruption. GitHub Actions independently validated recovered commit 15fb7150414b6bf66b863aac3aa63bcfc84fae2b: backend BUILD SUCCESS with 6 tests, 0 failures and 0 errors. H2 MySQL mode does not substitute for real MySQL validation.
+## External/live validation still required
 
-The web admin JavaScript syntax check passed locally. Browser interaction tests were not completed. The local Android build was interrupted before its final result could be read. No APK or lint success is claimed from that local attempt.
+- Publish the repository Firestore rules and indexes to the live Firebase project.
+- Provide a backend Google/Firebase service identity, set `FIREBASE_ENABLED=true`, and validate live Firestore, FCM and Storage behavior.
+- Production Spring Boot/MySQL hosting behind HTTPS, database backups, restore drills, and shared ingress/rate limiting.
+- SSLCommerz merchant credentials plus sandbox callback/refund testing before enabling live payments.
+- Physical-device usability/accessibility testing and production privacy/disclosure review for Analytics, Crashlytics, notifications and location.
+- Embedded Maps UI requires a Maps SDK/API key if desired; external Google Maps directions already work without embedding.
+- Release signing/Play Store configuration requires a private release keystore and store credentials.
 
-## Remaining requirements
+## Product enhancements not required for the core booking flow
 
-- Original AI Studio frontend source and visual matching.
-- Live Firebase IAM/service credentials, deployed Firestore/Storage rules, FCM delivery, Analytics and Crashlytics validation on the production Firebase project.
-- Production Spring Boot/MySQL hosting and reachable HTTPS API.
-- SSLCommerz credentials, sandbox lifecycle/refund tests and production enablement.
-- Device/emulator testing, accessibility review, offline data cache and rotation/process-death recovery.
-- Embedded Maps UI. Native owner photo picking/upload is implemented; embedded map rendering still requires a Maps SDK/API-key decision.
-- Owner walk-in UI and richer owner reporting. Firestore synchronization after committed app changes is implemented, with periodic reconciliation.
-- Full category/banner editing, pagination, system settings and richer admin analytics.
-- Guest history recovery and owner password recovery.
-- Distributed rate limiting, coordinated outbox claims and measured load performance.
-- Release signing and backup/restore verification.
+- Owner walk-in booking UI and richer owner reporting.
+- Password recovery requires a transactional email/SMS delivery provider and recovery-token policy.
+- Larger marketplaces should replace the current 500-candidate location search with indexed geospatial querying/pagination.
+- Multi-instance production notification delivery should use coordinated outbox claims or a queue.
+- Staff splitting and overnight appointments are intentionally outside the current booking model.
 
-Existing bookings remain reserved when owner schedules change, but the schedule editor does not warn about those bookings. Search limits its candidate set to 500 verified parlours before distance filtering; larger datasets require indexed geographic queries and pagination. Search-performance targets have not been measured.
-
-Keep live payments and production customer data out of this preview until integration, deployment and security validation are completed.
+Keep live payment credentials and production customer traffic disabled until the external/live validation items above are completed.
