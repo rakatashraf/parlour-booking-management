@@ -2,6 +2,8 @@
 
 Development preview for the supplied project proposal: native Android Java/XML with MVVM, Spring Boot REST API, MySQL, Firebase FCM/Storage and SSLCommerz adapters.
 
+Both Android and backend Java sources use the unified package namespace `com.parlour.management`.
+
 **Status: development preview, not a launched commercial product.** AI Studio source could not be accessed through the supplied link. The native UI is a functional baseline, not a verified reproduction of that design. Firebase Console and Google sign-in returned gateway errors during development. No live Firebase settings, hosting, merchant credentials or billing were configured. See [verification and gaps](docs/VERIFICATION.md).
 
 ## Run the backend and database
