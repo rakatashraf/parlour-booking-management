@@ -1,4 +1,4 @@
-package com.parlour.api;
+package com.parlour.management;
 
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.test.context.DynamicPropertyRegistry;

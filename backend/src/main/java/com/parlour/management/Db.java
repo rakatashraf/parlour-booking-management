@@ -1,4 +1,4 @@
-package com.parlour.api;
+package com.parlour.management;
 import java.util.*;
 import java.math.BigDecimal;
 import java.sql.*;
