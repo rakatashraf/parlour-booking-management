@@ -20,9 +20,9 @@ service cloud.firestore {
          ownsParlour(pid) || isAdmin());
     }
     function bookingReadable(bid) {
-      let b = get(/databases/$(database)/documents/bookings/$(bid));
-      return signedIn() && b != null &&
-        (b.data.customer_id == userId() || ownsParlour(string(b.data.parlour_id)) || isAdmin());
+      let bookingPath = /databases/$(database)/documents/bookings/$(bid);
+      return signedIn() && exists(bookingPath) &&
+        (get(bookingPath).data.customer_id == userId() || ownsParlour(string(get(bookingPath).data.parlour_id)) || isAdmin());
     }
 
     match /categories/{id} {
