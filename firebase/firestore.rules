@@ -41,10 +41,6 @@ service cloud.firestore {
       allow read: if resource.data.target_type == 'PARLOUR' && parlourReadable(string(resource.data.parlour_id));
       allow write: if false;
     }
-    match /staff_services/{id} { allow read: if signedIn(); allow write: if false; }
-    match /staff_schedules/{id} { allow read: if signedIn() && ownsParlour(string(resource.data.parlour_id)); allow write: if false; }
-    match /holidays/{id} { allow read: if signedIn() && ownsParlour(string(resource.data.parlour_id)); allow write: if false; }
-    match /blocked_slots/{id} { allow read: if signedIn() && ownsParlour(string(resource.data.parlour_id)); allow write: if false; }
     match /{document=**} { allow read, write: if false; }
   }
 }
