@@ -17,6 +17,7 @@ class BookingIntegrationTest {
  @Autowired Db db;@Autowired TestRestTemplate http;@Autowired Auth auth;
  long pid,sid,service;String customer,other,owner;Instant start;
  ResponseEntity<Map> request(String method,String path,String token,Object body,String key){var h=new HttpHeaders();h.setContentType(MediaType.APPLICATION_JSON);if(token!=null)h.setBearerAuth(token);if(key!=null)h.set("Idempotency-Key",key);return http.exchange(path,HttpMethod.valueOf(method),new HttpEntity<>(body,h),Map.class);}
+ ResponseEntity<Object> requestAny(String method,String path,String token,Object body,String key){var h=new HttpHeaders();h.setContentType(MediaType.APPLICATION_JSON);if(token!=null)h.setBearerAuth(token);if(key!=null)h.set("Idempotency-Key",key);return http.exchange(path,HttpMethod.valueOf(method),new HttpEntity<>(body,h),Object.class);}
  @BeforeEach void fixture(){String tag=UUID.randomUUID().toString();long o=db.insert("users",map("name","Owner","email",tag+"@test.invalid","role","OWNER"));owner=auth.token(o).get("token").toString();long c=db.insert("users",map("name","Guest","role","CUSTOMER"));customer=auth.token(c).get("token").toString();other=auth.token(db.insert("users",map("name","Other","role","CUSTOMER"))).get("token").toString();pid=db.insert("parlours",map("owner_id",o,"name","Test parlour","category","UNISEX","address","Test","lat",23.8,"lng",90.4,"phone","01700000000","status","VERIFIED"));service=db.insert("services",map("parlour_id",pid,"name","Cut","duration_min",60,"price",500));sid=db.insert("staff",map("parlour_id",pid,"name","Staff"));db.update("INSERT INTO staff_services VALUES (?,?,?)",sid,service,"QUALIFIED");LocalDate day=LocalDate.now(ZoneId.of("Asia/Dhaka")).plusDays(2);start=day.atTime(10,0).atZone(ZoneId.of("Asia/Dhaka")).toInstant();db.insert("business_hours",map("parlour_id",pid,"day_of_week",day.getDayOfWeek().getValue(),"start_time",java.sql.Time.valueOf("09:00:00"),"end_time",java.sql.Time.valueOf("18:00:00")));db.insert("staff_schedules",map("staff_id",sid,"day_of_week",day.getDayOfWeek().getValue(),"start_time",java.sql.Time.valueOf("09:00:00"),"end_time",java.sql.Time.valueOf("18:00:00")));db.insert("cancellation_policies",map("parlour_id",pid));}
  Map<String,Object> body(Instant at){return map("parlour_id",pid,"services",List.of(service),"staff_id",sid,"start_at",at.toString(),"customer_name","Customer","customer_phone","01711111111","payment_method","AT_PARLOUR","total_amount",1);}
  long book(){var r=request("POST","/api/bookings",customer,body(start),UUID.randomUUID().toString());assertEquals(200,r.getStatusCode().value(),r.toString());return ((Number)r.getBody().get("booking_id")).longValue();}
@@ -38,21 +39,21 @@ class BookingIntegrationTest {
   assertEquals(400,escalation.getStatusCode().value(),escalation.toString());
  }
  @Test void customerCanBrowseVerifiedParlourAndOwnerCanManageOwnServices(){
-  var search=request("GET","/api/public/parlours",null,null,null);
+  var search=requestAny("GET","/api/public/parlours",null,null,null);
   assertEquals(200,search.getStatusCode().value());
   assertTrue(((List<Map<String,Object>>)search.getBody()).stream().anyMatch(p->((Number)p.get("parlour_id")).longValue()==pid));
   var profile=request("GET","/api/public/parlours/"+pid,null,null,null);
   assertEquals(200,profile.getStatusCode().value());
   var created=request("POST","/api/owner/parlours/"+pid+"/services",owner,map("name","Added service","description","Integration test","duration_min",30,"price",250,"status","ACTIVE"),null);
   assertEquals(200,created.getStatusCode().value(),created.toString());
-  var forbidden=request("GET","/api/owner/parlours/"+pid+"/services",customer,null,null);
+  var forbidden=requestAny("GET","/api/owner/parlours/"+pid+"/services",customer,null,null);
   assertEquals(403,forbidden.getStatusCode().value());
  }
  @Test void adminResourcesRequireAdminRole(){
   long adminId=db.insert("users",map("name","Test admin","role","ADMIN","status","ACTIVE"));
   String admin=auth.token(adminId).get("token").toString();
-  assertEquals(403,request("GET","/api/admin/users",customer,null,null).getStatusCode().value());
-  assertEquals(403,request("GET","/api/admin/users",owner,null,null).getStatusCode().value());
-  assertEquals(200,request("GET","/api/admin/users",admin,null,null).getStatusCode().value());
+  assertEquals(403,requestAny("GET","/api/admin/users",customer,null,null).getStatusCode().value());
+  assertEquals(403,requestAny("GET","/api/admin/users",owner,null,null).getStatusCode().value());
+  assertEquals(200,requestAny("GET","/api/admin/users",admin,null,null).getStatusCode().value());
  }
 }
