@@ -1,6 +1,31 @@
 plugins { id 'com.android.application'; id 'com.google.gms.google-services'; id 'com.google.firebase.crashlytics' }
 def configuredApiBase = project.findProperty('API_BASE_URL')
+// Release signing setup (documented for the release manager):
+//   Option 1 (recommended): create a keystore.properties file NEXT TO THE REPO ROOT containing:
+//       storeFile=/absolute/path/to/release.keystore
+//       storePassword=your-store-password
+//       keyAlias=your-key-alias
+//       keyPassword=your-key-password
+//   Option 2: set environment variables PARLOUR_KEYSTORE, PARLOUR_STORE_PASSWORD, PARLOUR_KEY_ALIAS, PARLOUR_KEY_PASSWORD.
+// keystore.properties is listed in .gitignore and must NEVER be committed. No real keystore is shipped with this repo.
+def keystoreProps = new Properties()
+def keystorePropsFile = rootProject.file('keystore.properties')
+if (keystorePropsFile.exists()) { keystorePropsFile.withInputStream { keystoreProps.load(it) } }
+def ksPath = System.getenv('PARLOUR_KEYSTORE') ?: keystoreProps.getProperty('storeFile')
+def ksStorePassword = System.getenv('PARLOUR_STORE_PASSWORD') ?: keystoreProps.getProperty('storePassword')
+def ksKeyAlias = System.getenv('PARLOUR_KEY_ALIAS') ?: keystoreProps.getProperty('keyAlias')
+def ksKeyPassword = System.getenv('PARLOUR_KEY_PASSWORD') ?: keystoreProps.getProperty('keyPassword')
 android {
+ signingConfigs {
+  release {
+   if (ksPath) {
+    storeFile file(ksPath)
+    storePassword ksStorePassword
+    keyAlias ksKeyAlias
+    keyPassword ksKeyPassword
+   }
+  }
+ }
  namespace 'com.parlour.management'
  compileSdk 35
  defaultConfig {
@@ -23,6 +48,18 @@ android {
    }
    buildConfigField 'String', 'API_BASE_URL', '"' + releaseApi + '"'
    minifyEnabled false
+   signingConfig signingConfigs.release
+  }
+ }
+ // Fail fast with a clear message when a release build is requested without signing configured.
+ tasks.whenTaskAdded { t ->
+  if (t.name in ['assembleRelease', 'bundleRelease']) {
+   t.doFirst {
+    def sf = signingConfigs.release.storeFile
+    if (sf == null || !sf.exists()) {
+     throw new GradleException('Release signing is not configured. Create a keystore.properties file at the repo root (see the comment at the top of android/app/build.gradle) or set PARLOUR_KEYSTORE/PARLOUR_STORE_PASSWORD/PARLOUR_KEY_ALIAS/PARLOUR_KEY_PASSWORD env vars, then rebuild. Refusing to ship an unsigned release build.')
+    }
+   }
   }
  }
 }
