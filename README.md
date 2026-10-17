@@ -4,7 +4,7 @@ Development preview for the supplied project proposal: native Android Java/XML w
 
 Both Android and backend Java sources use the unified package namespace `com.parlour.management`.
 
-**Status: build-verified development implementation, not yet a launched commercial product.** The native Android UI, Spring Boot backend, MySQL booking engine and Firebase integration are implemented and CI-verified. The Firebase project owner has created the Firestore database; production IAM credentials, rules/index deployment, live FCM/Storage validation, hosting, merchant credentials and release signing still require environment-specific setup. See [verification and gaps](docs/VERIFICATION.md).
+**Status: build-verified development implementation, not yet a launched commercial product.** The native Android UI, Spring Boot backend, MySQL booking engine and Firebase integration are implemented and CI-verified. A full security/quality audit (2026-10-17) fixed all critical and high defects — see [defect report](docs/DEFECT_REPORT.md) and [deployment readiness](docs/DEPLOYMENT_READINESS.md). The Firebase project owner has created the Firestore database; production IAM credentials, rules/index deployment, live FCM/Storage validation, hosting, merchant credentials and release signing still require environment-specific setup. See [verification and gaps](docs/VERIFICATION.md).
 
 ## Run the backend and database
 
