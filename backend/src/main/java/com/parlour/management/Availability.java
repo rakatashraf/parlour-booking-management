@@ -16,8 +16,10 @@ public class Availability {
   if(!contains(db.list("SELECT * FROM business_hours WHERE parlour_id=? AND day_of_week=?",pid,at.getDayOfWeek().getValue()),at.toLocalTime(),end.atZone(zone).toLocalTime()))return null;
   for(var st:db.list("SELECT * FROM staff WHERE parlour_id=? AND status='ACTIVE' ORDER BY staff_id",pid)){long sid=id(st,"staff_id");if(preferred!=null&&preferred!=sid)continue;boolean qualified=true;for(long service:services)if(db.count("SELECT COUNT(*) FROM staff_services WHERE staff_id=? AND service_id=?",sid,service)!=1)qualified=false;if(!qualified)continue;
    if(!contains(db.list("SELECT * FROM staff_schedules WHERE staff_id=? AND day_of_week=? AND status='ACTIVE'",sid,at.getDayOfWeek().getValue()),at.toLocalTime(),end.atZone(zone).toLocalTime()))continue;
-   if(db.count("SELECT COUNT(*) FROM blocked_slots WHERE parlour_id=? AND (staff_id IS NULL OR staff_id=?) AND start_at<? AND end_at>?",pid,sid,Timestamp.from(end),Timestamp.from(start))>0)continue;
-   if(db.count("SELECT COUNT(*) FROM bookings WHERE parlour_id=? AND staff_id=? AND booking_id<>? AND start_at<? AND end_at>? AND (status IN ('CONFIRMED','PENDING_OWNER','CANCEL_PENDING','COMPLETED') OR (status='PENDING_PAYMENT' AND hold_until>?))",pid,sid,exclude,Timestamp.from(end),Timestamp.from(start),Timestamp.from(Instant.now()))==0)return sid;
+   boolean blocked=db.list("SELECT * FROM blocked_slots WHERE parlour_id=? AND start_at<?",pid,Timestamp.from(end)).stream().anyMatch(bl->(bl.get("staff_id")==null||id(bl,"staff_id")==sid)&&Bookings.instant(bl.get("start_at")).isBefore(end)&&Bookings.instant(bl.get("end_at")).isAfter(start));
+   if(blocked)continue;
+   boolean clash=db.list("SELECT * FROM bookings WHERE parlour_id=? AND staff_id=? AND end_at>?",pid,sid,Timestamp.from(start)).stream().anyMatch(r->id(r,"booking_id")!=exclude&&Bookings.instant(r.get("start_at")).isBefore(end)&&(Set.of("CONFIRMED","PENDING_OWNER","CANCEL_PENDING","COMPLETED").contains(r.get("status"))||("PENDING_PAYMENT".equals(r.get("status"))&&r.get("hold_until")!=null&&Bookings.instant(r.get("hold_until")).isAfter(Instant.now()))));
+   if(!clash)return sid;
   }return null;
  }
  static LocalTime time(Object v){return v instanceof java.sql.Time t?t.toLocalTime():LocalTime.parse(v.toString());}

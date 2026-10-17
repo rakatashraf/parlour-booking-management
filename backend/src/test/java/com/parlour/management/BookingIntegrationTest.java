@@ -10,7 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
-@SpringBootTest(webEnvironment=SpringBootTest.WebEnvironment.RANDOM_PORT,properties={"spring.datasource.url=jdbc:h2:mem:parlour;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;LOCK_TIMEOUT=10000","spring.datasource.driver-class-name=org.h2.Driver","spring.datasource.username=sa","spring.datasource.password=","app.jwt-secret=test-secret-with-more-than-thirty-two-bytes","app.firebase-enabled=false"})
+@SpringBootTest(webEnvironment=SpringBootTest.WebEnvironment.RANDOM_PORT,properties={"app.jwt-secret=test-secret-with-more-than-thirty-two-bytes"})
+// Runs against the Firestore emulator: set FIRESTORE_EMULATOR_HOST=localhost:8080 before running.
+// Firestore is the only database; there is no H2/MySQL fallback.
 class BookingIntegrationTest {
  @Autowired Db db;@Autowired TestRestTemplate http;@Autowired Auth auth;
  long pid,sid,service;String customer,other,owner;Instant start;
