@@ -26,4 +26,31 @@ class BookingIntegrationTest {
  @Test void holidayAndBlockedPeriodsRejectBookings(){db.insert("holidays",map("parlour_id",pid,"holiday_date",java.sql.Date.valueOf(start.atZone(ZoneId.of("Asia/Dhaka")).toLocalDate())));assertEquals(409,request("POST","/api/bookings",customer,body(start),"holiday").getStatusCode().value());db.update("DELETE FROM holidays WHERE parlour_id=?",pid);db.insert("blocked_slots",map("parlour_id",pid,"start_at",Timestamp.from(start.minusSeconds(900)),"end_at",Timestamp.from(start.plusSeconds(900))));assertEquals(409,request("POST","/api/bookings",customer,body(start),"blocked").getStatusCode().value());}
  @Test void unauthorizedOwnerCannotModifyAnotherParlour(){long o=db.insert("users",map("name","Other owner","role","OWNER"));String token=auth.token(o).get("token").toString();assertEquals(403,request("POST","/api/owner/parlours/"+pid+"/services",token,map("name","Bad","duration_min",30,"price",5),null).getStatusCode().value());}
  @Test void reviewRequiresCompletedBooking(){long bid=book();assertEquals(403,request("POST","/api/ratings",customer,map("booking_id",bid,"target_type","PARLOUR","score",5,"review","Nice"),null).getStatusCode().value());assertEquals(409,request("POST","/api/owner/bookings/"+bid+"/status",owner,map("status","COMPLETED"),null).getStatusCode().value());}
+
+ @Test void registrationDefaultsToCustomerAndRejectsAdminEscalation(){
+  String tag=UUID.randomUUID().toString();
+  var created=request("POST","/api/auth/register",null,map("name","New Customer","email",tag+"@test.invalid","phone","01722222222","password","test-password-123"),null);
+  assertEquals(200,created.getStatusCode().value(),created.toString());
+  assertEquals("CUSTOMER",((Map)created.getBody().get("user")).get("role"));
+  var escalation=request("POST","/api/auth/register",null,map("name","Bad Admin","email",UUID.randomUUID()+"@test.invalid","phone","01733333333","password","test-password-123","role","ADMIN"),null);
+  assertEquals(400,escalation.getStatusCode().value(),escalation.toString());
+ }
+ @Test void customerCanBrowseVerifiedParlourAndOwnerCanManageOwnServices(){
+  var search=request("GET","/api/public/parlours",null,null,null);
+  assertEquals(200,search.getStatusCode().value());
+  assertTrue(((List<Map<String,Object>>)search.getBody()).stream().anyMatch(p->((Number)p.get("parlour_id")).longValue()==pid));
+  var profile=request("GET","/api/public/parlours/"+pid,null,null,null);
+  assertEquals(200,profile.getStatusCode().value());
+  var created=request("POST","/api/owner/parlours/"+pid+"/services",owner,map("name","Added service","description","Integration test","duration_min",30,"price",250,"status","ACTIVE"),null);
+  assertEquals(200,created.getStatusCode().value(),created.toString());
+  var forbidden=request("GET","/api/owner/parlours/"+pid+"/services",customer,null,null);
+  assertEquals(403,forbidden.getStatusCode().value());
+ }
+ @Test void adminResourcesRequireAdminRole(){
+  long adminId=db.insert("users",map("name","Test admin","role","ADMIN","status","ACTIVE"));
+  String admin=auth.token(adminId).get("token").toString();
+  assertEquals(403,request("GET","/api/admin/users",customer,null,null).getStatusCode().value());
+  assertEquals(403,request("GET","/api/admin/users",owner,null,null).getStatusCode().value());
+  assertEquals(200,request("GET","/api/admin/users",admin,null,null).getStatusCode().value());
+ }
 }
