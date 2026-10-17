@@ -32,6 +32,8 @@ class BookingIntegrationTest {
   var created=request("POST","/api/auth/register",null,map("name","New Customer","email",tag+"@test.invalid","phone","01722222222","password","test-password-123"),null);
   assertEquals(200,created.getStatusCode().value(),created.toString());
   assertEquals("CUSTOMER",((Map)created.getBody().get("user")).get("role"));
+  var duplicate=request("POST","/api/auth/register",null,map("name","Duplicate Customer","email",tag+"@test.invalid","phone","01744444444","password","test-password-123"),null);
+  assertEquals(409,duplicate.getStatusCode().value(),duplicate.toString());
   var escalation=request("POST","/api/auth/register",null,map("name","Bad Admin","email",UUID.randomUUID()+"@test.invalid","phone","01733333333","password","test-password-123","role","ADMIN"),null);
   assertEquals(400,escalation.getStatusCode().value(),escalation.toString());
  }
