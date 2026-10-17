@@ -29,6 +29,7 @@ android {
  namespace 'com.parlour.management'
  compileSdk 35
  defaultConfig {
+  testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
   applicationId 'com.parlour.management'
   minSdk 26
   targetSdk 35
@@ -39,9 +40,11 @@ android {
  compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17; coreLibraryDesugaringEnabled true }
  buildTypes {
   debug {
+   manifestPlaceholders = [allowCleartextTraffic: 'true']
    buildConfigField 'String', 'API_BASE_URL', '"' + (configuredApiBase ?: 'http://10.0.2.2:8080') + '"'
   }
   release {
+   manifestPlaceholders = [allowCleartextTraffic: 'false']
    def releaseApi = configuredApiBase ?: ''
    if (!releaseApi.isBlank() && !releaseApi.startsWith('https://')) {
     throw new GradleException('Release API_BASE_URL must use HTTPS')
@@ -76,5 +79,9 @@ dependencies {
  implementation 'com.google.firebase:firebase-messaging'
  implementation 'com.google.firebase:firebase-analytics'
  implementation 'com.google.firebase:firebase-crashlytics'
+ androidTestImplementation 'androidx.test:core:1.6.1'
+ androidTestImplementation 'androidx.test:runner:1.6.2'
+ androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+ androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
  coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.3'
 }
