@@ -18,7 +18,10 @@ public class Db {
  List<Map<String,Object>> list(String sql,Object... args){return jdbc.queryForList(sql,args);}
  Map<String,Object> one(String sql,Object... args){var rows=list(sql,args);if(rows.isEmpty())throw error(404,"Record not found");return rows.get(0);}
  long count(String sql,Object...args){return jdbc.queryForObject(sql,Long.class,args);}
- int update(String sql,Object...args){int changed=jdbc.update(sql,args);if(changed>0)emit(sql);return changed;}
+ int update(String sql,Object...args){int changed=jdbc.update(sql,args);if(changed>0&&!silent(sql))emit(sql);return changed;}
+ /** Internal bookkeeping writes that never change business-visible state; no Firestore sync needed. */
+ static final Set<String> SILENT_UPDATE_TABLES=Set.of("notifications","device_tokens");
+ static boolean silent(String sql){var m=MUTATION_TABLE.matcher(sql);if(!m.find())return false;String t=m.group(1).toLowerCase(Locale.ROOT);return SILENT_UPDATE_TABLES.contains(t)||t.startsWith("system_");}
  void emit(String sql){var m=MUTATION_TABLE.matcher(sql);if(m.find())events.publishEvent(new Mutation(m.group(1).toLowerCase(Locale.ROOT)));}
  long insert(String table,Map<String,Object> fields){
   var keys=new ArrayList<>(fields.keySet());String sql="INSERT INTO "+table+" ("+String.join(",",keys)+") VALUES ("+String.join(",",Collections.nCopies(keys.size(),"?"))+")";

@@ -19,9 +19,14 @@ public class Auth {
  long require(String role){var u=current();if(!role.equals(u.get("role")))throw error(403,"This action requires "+role);return id(u,"user_id");}
  void owner(long pid){long uid=require("OWNER");if(db.count("SELECT COUNT(*) FROM parlours WHERE parlour_id=? AND owner_id=?",pid,uid)!=1)throw error(403,"Not your parlour");}
  @PostMapping("/api/auth/guest") Map<String,Object> guest(){return token(db.insert("users",map("name","Guest","role","CUSTOMER","status","ACTIVE")));}
- @PostMapping("/api/auth/register") Map<String,Object> register(@RequestBody Map<String,Object> b){String email=text(b,"email",254).toLowerCase(Locale.ROOT),password=text(b,"password",72);validatePassword(password);if(!email.matches("[^\\s@]+@[^\\s@]+\\.[^\\s@]+"))throw error(400,"Enter a valid email");return token(db.insert("users",map("name",text(b,"name",120),"email",email,"phone",phone(b),"password_hash",encoder.encode(password),"role","OWNER","status","ACTIVE")));}
+ @PostMapping("/api/auth/register") Map<String,Object> register(@RequestBody Map<String,Object> b){String email=text(b,"email",254).toLowerCase(Locale.ROOT),password=text(b,"password",72);validatePassword(password);if(!email.matches("[^\\s@]+@[^\\s@]+\\.[^\\s@]+"))throw error(400,"Enter a valid email");Object raw=b.get("role");String role=raw==null?"CUSTOMER":raw.toString().trim().toUpperCase(Locale.ROOT);if(!Set.of("CUSTOMER","OWNER").contains(role))throw error(400,"Invalid role");return token(db.insert("users",map("name",text(b,"name",120),"email",email,"phone",phone(b),"password_hash",encoder.encode(password),"role",role,"status","ACTIVE")));}
  @PostMapping("/api/auth/login") Map<String,Object> login(@RequestBody Map<String,Object>b){var rows=db.list("SELECT * FROM users WHERE email=?",text(b,"email",254).toLowerCase(Locale.ROOT));String password=text(b,"password",72);if(rows.isEmpty()||rows.get(0).get("password_hash")==null||!encoder.matches(password,rows.get(0).get("password_hash").toString())||!"ACTIVE".equals(rows.get(0).get("status")))throw error(401,"Invalid credentials");return token(id(rows.get(0),"user_id"));}
  @GetMapping("/api/me") Map<String,Object> me(){return current();}
+ /** Server-side logout. JWTs are stateless (no server-side session store), so this
+     unregisters the caller's push-notification device tokens to stop notifications
+     after logout; the client must discard the token locally. A token deny-list was
+     deliberately not added — owner/admin tokens expire after 1 day. */
+ @PostMapping("/api/auth/logout") Map<String,Object> logout(){db.update("DELETE FROM device_tokens WHERE user_id=?",Security.uid());return map("ok",true);}
  static String phone(Map<String,Object>b){String p=text(b,"phone",30);if(!p.matches("\\+?[0-9 ()-]{7,25}"))throw error(400,"Invalid phone");return p;}
  static void validatePassword(String p){if(p.length()<12||p.getBytes(StandardCharsets.UTF_8).length>72)throw error(400,"Password must contain at least 12 characters and at most 72 UTF-8 bytes");}
  Map<String,Object> token(long uid) {

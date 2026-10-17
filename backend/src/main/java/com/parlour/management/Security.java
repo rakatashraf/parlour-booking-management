@@ -16,6 +16,9 @@ import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 @Configuration
@@ -26,7 +29,18 @@ public class Security {
   if(secret.getBytes(StandardCharsets.UTF_8).length<32)throw new IllegalArgumentException("JWT_SECRET needs at least 32 bytes");
   var d=NimbusJwtDecoder.withSecretKey(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8),"HmacSHA256")).macAlgorithm(MacAlgorithm.HS256).build();d.setJwtValidator(JwtValidators.createDefaultWithIssuer(ISSUER));return d;
  }
- @Bean SecurityFilterChain chain(HttpSecurity h)throws Exception{return h.csrf(c->c.disable()).sessionManagement(s->s.sessionCreationPolicy(SessionCreationPolicy.STATELESS)).authorizeHttpRequests(a->a.requestMatchers("/api/auth/**","/api/public/**","/api/payments/callback","/admin/**","/error").permitAll().anyRequest().authenticated()).oauth2ResourceServer(o->o.jwt(j->{})).addFilterBefore(new Limit(),UsernamePasswordAuthenticationFilter.class).build();}
+ @Bean SecurityFilterChain chain(HttpSecurity h)throws Exception{return h.cors(c->{}).csrf(c->c.disable()).sessionManagement(s->s.sessionCreationPolicy(SessionCreationPolicy.STATELESS)).authorizeHttpRequests(a->a.requestMatchers("/api/auth/**","/api/public/**","/api/payments/callback","/admin/**","/error").permitAll().anyRequest().authenticated()).oauth2ResourceServer(o->o.jwt(j->{})).addFilterBefore(new Limit(),UsernamePasswordAuthenticationFilter.class).build();}
+ @Bean CorsConfigurationSource cors(@Value("${app.cors-origins:}")String origins){
+  var allowed=Arrays.stream(origins.split(",")).map(String::trim).filter(s->!s.isEmpty()).toList();
+  var config=new CorsConfiguration();
+  config.setAllowedOrigins(allowed);
+  config.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
+  config.setAllowedHeaders(List.of("Authorization","Content-Type","Idempotency-Key"));
+  config.setMaxAge(3600L);
+  var source=new UrlBasedCorsConfigurationSource();
+  source.registerCorsConfiguration("/api/**",config);
+  return source;
+ }
  static class Limit extends OncePerRequestFilter {
   record Bucket(long minute,int count){} private final Map<String,Bucket> buckets=new ConcurrentHashMap<>();
   protected void doFilterInternal(HttpServletRequest req,HttpServletResponse res,FilterChain chain)throws java.io.IOException,ServletException{
