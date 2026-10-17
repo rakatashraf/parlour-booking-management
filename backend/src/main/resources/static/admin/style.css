@@ -1,1 +1,14 @@
 *{box-sizing:border-box}body{margin:0;background:#fbf7f2;color:#30202a;font:16px/1.6 system-ui,sans-serif}header{padding:20px 5%;border-bottom:1px solid #e3d9de;display:flex;gap:24px;align-items:center}header strong{font-size:30px;color:#643c57}header button{margin-left:auto}main{max-width:1300px;margin:40px auto;padding:0 24px}h1{font-size:34px;letter-spacing:-1px}p{color:#786973}input,select,button,textarea{font:inherit;padding:10px 14px;border:1px solid #d5c6ce;border-radius:8px}button{background:#643c57;color:white;cursor:pointer}button:disabled{opacity:.5}label{display:block;margin:18px 0}input{display:block;width:100%;max-width:480px;background:white}nav{display:flex;gap:8px;flex-wrap:wrap}nav button{background:white;color:#643c57}#data{overflow:auto;margin-top:24px}table{width:100%;border-collapse:collapse;font-size:14px;background:white}th,td{text-align:left;padding:12px;border-bottom:1px solid #eee;max-width:300px;overflow-wrap:anywhere}th{text-transform:capitalize}.metrics{display:flex;gap:18px;flex-wrap:wrap}.metric{padding:25px;background:white;border:1px solid #e3d9de;border-radius:14px;min-width:180px}.metric strong{font-size:32px;display:block}#message{color:#8b244d}#actions{display:flex;gap:12px;flex-wrap:wrap}
+.filters{display:flex;gap:14px;flex-wrap:wrap;margin:18px 0;align-items:flex-end}
+.filters label{margin:0}
+.pager{display:flex;gap:12px;align-items:center;margin:18px 0}
+.pager span{color:#786973;font-size:14px}
+th.sortable{cursor:pointer;user-select:none}
+th.sortable:hover{text-decoration:underline}
+.detail{background:white;border:1px solid #e3d9de;border-radius:14px;padding:20px;margin-top:24px}
+.detail h3{margin-top:0}
+.badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;background:#eee;white-space:nowrap}
+.st-confirmed{background:#dcefdc}
+.st-completed{background:#dfe8f6}
+.st-cancelled,.st-rejected{background:#f6dfe4}
+.st-pending_owner,.st-pending_payment,.st-cancel_pending{background:#f6ecd9}

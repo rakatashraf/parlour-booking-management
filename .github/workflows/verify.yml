@@ -101,9 +101,27 @@ jobs:
           name: Parlour-Booking-Debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build backend image (no push)
+        run: docker build -f backend/Dockerfile -t parlour-api:ci backend
+  codeql:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: java
+      - uses: github/codeql-action/autobuild@v3
+      - uses: github/codeql-action/analyze@v3
   release:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-    needs: [backend, mysql, firebase-rules, android]
+    needs: [backend, mysql, firebase-rules, android, docker]
     runs-on: ubuntu-latest
     permissions:
       contents: write

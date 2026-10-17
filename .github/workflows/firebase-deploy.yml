@@ -14,7 +14,7 @@ jobs:
       - uses: google-github-actions/auth@v2
         with:
           credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}'
-      - run: npm install -g firebase-tools
+      - run: npm install -g firebase-tools@15.30.1
       - name: Deploy Firestore indexes/rules and Storage rules
         working-directory: firebase
         run: firebase deploy --only firestore,storage --project parlour-booking-management --non-interactive
