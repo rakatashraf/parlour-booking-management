@@ -27,7 +27,7 @@ The application is **code-complete and compiles cleanly**, with all audited crit
 
 ### CI/CD
 - **New:** Docker build job, Dependabot, CodeQL, pinned firebase-tools
-- **Existing:** Backend tests (H2), MySQL integration tests, Firestore rules emulator tests, Android build
+- **Existing:** Backend integration tests (Firestore emulator), Android build
 
 ### Docker
 - **New:** Healthchecks, restart policies, CORS support
@@ -40,23 +40,24 @@ The application is **code-complete and compiles cleanly**, with all audited crit
 | # | Item | What's needed | Owner |
 |---|------|---------------|-------|
 | 1 | **Live Firebase deployment** | Deploy `firestore.rules`, `firestore.indexes.json`, `storage.rules` to project `parlour-booking-management`; verify Admin SDK connectivity with service identity | Operator with Firebase console access |
-| 2 | **Firestore sync end-to-end** | Create/update/delete a booking; verify it appears in Firestore within seconds; kill backend mid-sync; verify recovery | Operator |
+| 2 | **Firestore production cutover** | Place service-account JSON at `GOOGLE_APPLICATION_CREDENTIALS`; run migration (`--migrate.h2=true` was validated on emulator); verify all data in Firestore console | Operator |
 | 3 | **SSLCommerz** | Sandbox merchant credentials; test payment → callback → verification → refund flow | Operator with merchant account |
 | 4 | **FCM push** | Test device with registered token; verify booking notifications arrive | Operator with Android device |
 | 5 | **Android release** | Create release keystore; run `assembleRelease`; test on physical devices (API 26–35) | Operator |
 | 6 | **Load testing** | Concurrent booking load (100+ simultaneous); availability endpoint under load | Operator |
-| 7 | **MySQL production** | Backups, replication, monitoring; restore procedure tested | Operator/DevOps |
-| 8 | **HTTPS** | TLS termination for API + admin panel; HSTS | Operator/DevOps |
+| 7 | **HTTPS** | TLS termination for API + admin panel; HSTS | Operator/DevOps |
+
+**Note (2026-10-17):** Firestore is now the ONLY database. MySQL/H2/Flyway removed. Item 7 (MySQL production) deleted. Item 2 (sync) replaced with production cutover — the old MySQL→Firestore sync no longer exists.
 
 ---
 
 ## 🔧 Operator runbook (first deploy)
 
-1. **Secrets:** Copy `.env.example` to `.env`; set `DB_PASSWORD` (strong), `JWT_SECRET` (≥32 bytes), `CORS_ALLOWED_ORIGINS` (if web client hosted separately)
-2. **Firebase:** Place service-account JSON at path in `GOOGLE_APPLICATION_CREDENTIALS`; set `FIREBASE_ENABLED=true`; deploy rules: `cd firebase && firebase deploy --only firestore,storage --project parlour-booking-management`
-3. **Database:** `docker compose up -d mysql` (Flyway migrates automatically on backend start)
+1. **Secrets:** Copy `.env.example` to `.env`; set `JWT_SECRET` (≥32 bytes), `CORS_ALLOWED_ORIGINS` (if web client hosted separately)
+2. **Firebase:** Place service-account JSON at path in `GOOGLE_APPLICATION_CREDENTIALS`; deploy rules: `cd firebase && firebase deploy --only firestore,storage --project parlour-booking-management`
+3. **Database:** Firestore only — no MySQL, no migrations. (One-time H2→Firestore migration was validated; run with `--migrate.h2=true` if legacy data exists.)
 4. **Backend:** `docker compose up -d api`; check `GET /api/public/health` → `{"status":"UP"}`
-5. **Admin:** Open `http://<host>:8080/admin/`; sign in with admin credentials (create via DB seed)
+5. **Admin:** Open `http://<host>:8080/admin/`; sign in with admin credentials
 6. **Android:** Build debug APK (`./gradlew assembleDebug`) or configure `keystore.properties` for release
 7. **Verify sync:** In admin panel → Sync → "Run full sync"; confirm collections populate in Firestore console
 

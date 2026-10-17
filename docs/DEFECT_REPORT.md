@@ -116,3 +116,27 @@ This report documents verified defects found during the audit, their severity, r
 3. **FCM:** No test devices; push delivery untested end-to-end.
 4. **Android:** No instrumented tests (no SDK in CI for emulator tests); release keystore not created (by design — operator creates it).
 5. **Load testing:** Booking concurrency tested (2 threads); production-scale load not tested.
+
+---
+
+## Firestore-only refactor (2026-10-17)
+
+**Decision:** Firestore replaces MySQL entirely as the only database (user directive 2026-10-17 21:31 Dhaka). MySQL/H2/Flyway removed; `Db.java` rewritten on Firestore.
+
+### Architecture
+- `Db.java` keeps the exact old method signatures (`list`/`one`/`count`/`update`/`insert`/`patch`) and translates a small SQL dialect to Firestore. JOINs, subselects, SUM/AVG are composed in Java at call sites. Anything outside the dialect throws loudly.
+- Numeric IDs preserved: document IDs are the numeric PK as strings; `_counters` collection for auto-increment.
+- Type mapping: `java.sql.Timestamp` ↔ Firestore Timestamp; `java.sql.Date` ↔ ISO string (only `bookings.booking_date`, `holidays.holiday_date`); `java.sql.Time` ↔ "HH:MM:SS"; `BigDecimal` ↔ Double; `Integer` → Long.
+- Legacy SQL column defaults (e.g., `users.status='ACTIVE'`) applied in `Db.insert` since Firestore has no DDL.
+
+### Transaction constraints (Firestore requires all reads before writes)
+- `Db.tx()` pre-reads all ID counters before running user code; `nextId()` uses the cache (no read during writes).
+- `Db.count()` falls back to fetch-and-count inside transactions (aggregations not allowed in tx).
+- `queueRefund()`, `cancel()` reordered to do all reads before writes.
+- PK-equality `UPDATE` skips the find-read via direct doc reference; `FieldValue.increment` for counters.
+- Spring `SecurityContext` propagated into the Firestore tx thread (else `auth.current()` 401s inside tx).
+
+### Verification
+- `BookingIntegrationTest`: 6/6 pass against the Firestore emulator.
+- H2 → Firestore migration validated on emulator: 3 users, 1 parlour, 4 services, 2 staff, 2 bookings, etc., all IDs preserved.
+- Emulator note: must run with `-Djava.net.preferIPv4Stack=true` and client must use `127.0.0.1` (not `localhost`); the sandbox network filter blocks gRPC to IPv4-mapped IPv6 sockets.
